@@ -13,7 +13,6 @@ A wallpaper picker for Linux, built with Raylib.
 ## Dependencies
 
 *   **raylib**
-*   **fontconfig**
 
 ## Building
 
