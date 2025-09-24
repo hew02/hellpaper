@@ -44,8 +44,10 @@ If no path is provided, it defaults to `~/Pictures/`.
 
 | Flag                | Argument | Description                                                                     |
 | ------------------- | -------- | ------------------------------------------------------------------------------- |
-| `--help`              |          | Show the help message and exit.                                                 |
+| `--help`              |          | Show the help message and exit.                                               |
 | `--filename`          |          | Print only the filename to `stdout` instead of the full path.                 |
+| `--width `          | `<pixels>`  | Set the initial window width.                                                |
+| `--height`          | `<pixels>`  | Set the initial window height.                                               |
 | `--startup-effect`  | `<name>` | Override the configured startup animation.                                      |
 | `--keypress-effect` | `<name>` | Override the configured key press animation.                                    |
 | `--exit-effect`     | `<name>` | Override the configured exit animation.                                         |
@@ -91,6 +93,10 @@ overlay = 10, 10, 15, 200
 text = 202, 212, 241, 255
 
 [Settings]
+# Width
+width = 1280
+# Height
+height = 720
 # The maximum number of wallpapers to load from the directory.
 max_wallpapers = 512
 # The base size of the square thumbnail images.

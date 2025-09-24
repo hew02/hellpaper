@@ -478,8 +478,8 @@ void ParseConfigFile()
             value = trim_whitespace(value);
 
             if (strcmp(key, "bg") == 0) sscanf(value, "%hhu, %hhu, %hhu, %hhu", &AppTheme.bg.r, &AppTheme.bg.g, &AppTheme.bg.b, &AppTheme.bg.a);
-            else if (strcmp(key, "win_width") == 0) g_win_width = atoi(value);
-            else if (strcmp(key, "win_height") == 0) g_win_height = atoi(value);
+            else if (strcmp(key, "width") == 0) g_win_width = atoi(value);
+            else if (strcmp(key, "height") == 0) g_win_height = atoi(value);
             else if (strcmp(key, "idle") == 0) sscanf(value, "%hhu, %hhu, %hhu, %hhu", &AppTheme.idle.r, &AppTheme.idle.g, &AppTheme.idle.b, &AppTheme.idle.a);
             else if (strcmp(key, "hover") == 0) sscanf(value, "%hhu, %hhu, %hhu, %hhu", &AppTheme.hover.r, &AppTheme.hover.g, &AppTheme.hover.b, &AppTheme.hover.a);
             else if (strcmp(key, "border") == 0) sscanf(value, "%hhu, %hhu, %hhu, %hhu", &AppTheme.border.r, &AppTheme.border.g, &AppTheme.border.b, &AppTheme.border.a);
