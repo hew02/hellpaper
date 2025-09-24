@@ -23,26 +23,12 @@
 
 ## Building
 
-*   **Build both Wayland and X11 versions:**
-    ```bash
-    make
-    ```
-    This creates two executables: `hellpaper` (for Wayland) and `hellpaper_x11`.
+Just run: 
 
-*   **Build only the Wayland version:**
-    ```bash
-    make wayland
-    ```
-
-*   **Build only the X11 version:**
-    ```bash
-    make x11
-    ```
-
-*   **Clean up build files:**
-    ```bash
-    make clean
-    ```
+```bash
+make
+```
+This creates `hellpaper` executable. If you run `make install`, it will be installed in `/usr/local/bin`
 
 ## Usage
 
