@@ -209,6 +209,9 @@ static float g_smoothScrollX = 0.0f;
 static int g_hoveredIndex = -1;
 static Rectangle g_previewStartRect;
 
+int g_win_width;
+int g_win_height;
+
 void LogMessage(int level, const char *format, ...)
 {
     const char* level_str = "";
@@ -435,6 +438,9 @@ void LoadDefaultConfig()
     g_particle_count = 50;
     g_ken_burns_duration = 15.0f;
     g_max_fps = 200;
+
+    g_win_width = 1280;
+    g_win_height = 720;
 }
 
 char* trim_whitespace(char* str) {
@@ -472,6 +478,8 @@ void ParseConfigFile()
             value = trim_whitespace(value);
 
             if (strcmp(key, "bg") == 0) sscanf(value, "%hhu, %hhu, %hhu, %hhu", &AppTheme.bg.r, &AppTheme.bg.g, &AppTheme.bg.b, &AppTheme.bg.a);
+            else if (strcmp(key, "win_width") == 0) g_win_width = atoi(value);
+            else if (strcmp(key, "win_height") == 0) g_win_height = atoi(value);
             else if (strcmp(key, "idle") == 0) sscanf(value, "%hhu, %hhu, %hhu, %hhu", &AppTheme.idle.r, &AppTheme.idle.g, &AppTheme.idle.b, &AppTheme.idle.a);
             else if (strcmp(key, "hover") == 0) sscanf(value, "%hhu, %hhu, %hhu, %hhu", &AppTheme.hover.r, &AppTheme.hover.g, &AppTheme.hover.b, &AppTheme.hover.a);
             else if (strcmp(key, "border") == 0) sscanf(value, "%hhu, %hhu, %hhu, %hhu", &AppTheme.border.r, &AppTheme.border.g, &AppTheme.border.b, &AppTheme.border.a);
@@ -508,6 +516,8 @@ void print_help()
     printf("OPTIONS:\n");
     printf("  --help              Show this help message and exit.\n");
     printf("  --filename          Print only the filename of the selected wallpaper to stdout.\n");
+    printf("  --width <pixels>    Set the initial window width.\n");
+    printf("  --height <pixels>   Set the initial window height.\n");
     printf("  --startup-effect <effect>\n");
     printf("  --keypress-effect <effect>\n");
     printf("  --exit-effect <effect>\n");
@@ -733,6 +743,14 @@ int main(int argc, char **argv)
         {
             print_filename_only = true;
         }
+        else if (strcmp(argv[i], "--width") == 0 && i + 1 < argc)
+        {
+            g_win_width = atoi(argv[++i]);
+        }
+        else if (strcmp(argv[i], "--height") == 0 && i + 1 < argc)
+        {
+            g_win_height = atoi(argv[++i]);
+        }
         else if (argv[i][0] != '-' && wallpaper_path == NULL)
         {
             wallpaper_path = argv[i];
@@ -746,9 +764,7 @@ int main(int argc, char **argv)
     }
     LoadWallpapers(wallpaper_path);
 
-    const int screenWidth = 1280;
-    const int screenHeight = 720;
-    InitWindow(screenWidth, screenHeight, "Hellpaper");
+    InitWindow(g_win_width, g_win_height, "Hellpaper");
     SetExitKey(KEY_NULL);
     SetTargetFPS(g_max_fps);
 
@@ -765,10 +781,10 @@ int main(int argc, char **argv)
     int scanlineLoc = GetShaderLocation(postShader, "scanlineIntensity");
 
     Shader blurShader = LoadShaderFromMemory(NULL, blurFs);
-    RenderTexture2D mainTarget = LoadRenderTexture(screenWidth, screenHeight);
-    RenderTexture2D bloomMask = LoadRenderTexture(screenWidth / bloomDownscale, screenHeight / bloomDownscale);
-    RenderTexture2D blurPingPong = LoadRenderTexture(screenWidth / bloomDownscale, screenHeight / bloomDownscale);
-    RenderTexture2D bloomMaskHiRes = LoadRenderTexture(screenWidth, screenHeight);
+    RenderTexture2D mainTarget = LoadRenderTexture(g_win_width, g_win_height);
+    RenderTexture2D bloomMask = LoadRenderTexture(g_win_width / bloomDownscale, g_win_height / bloomDownscale);
+    RenderTexture2D blurPingPong = LoadRenderTexture(g_win_width / bloomDownscale, g_win_height / bloomDownscale);
+    RenderTexture2D bloomMaskHiRes = LoadRenderTexture(g_win_width, g_win_height);
 
     pthread_t loader_threads[g_max_threads];
     for (int t = 0; t < g_max_threads; t++)
