@@ -1,3 +1,11 @@
+// this was vibe coded xd,
+// don't take this seriosly,
+// but feel free to use this.
+// It turned out to be actually pretty nice,
+// but someone may mind this.
+//
+// Peace :) - danihek
+
 #include "raylib.h"
 #include "raymath.h"
 #include "rlgl.h"
@@ -15,9 +23,6 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-//==============================================================================
-// SHADERS & CONFIG
-//==============================================================================
 const char *postProcessingFs =
     "#version 330 core\n"
     "in vec2 fragTexCoord;\n"
@@ -102,19 +107,10 @@ typedef struct
 } Theme;
 
 Theme AppTheme;
-//const Theme AppTheme =
-//{
-//    .bg = {10, 10, 15, 255},
-//    .idle = {30, 30, 46, 255},
-//    .hover = {49, 50, 68, 255},
-//    .border = {203, 166, 247, 255},
-//    .ripple = {245, 194, 231, 255},
-//    .overlay = {10, 10, 15, 200},
-//    .text = {202, 212, 241, 255}
-//};
 
 #define MAX_POSSIBLE_WALLPAPERS 2048
 #define MAX_POSSIBLE_PARTICLES 256
+#define MAX_TEXTURES_TO_LOAD_PER_FRAME 4
 
 int g_base_thumb_size;
 int g_max_wallpapers;
@@ -213,42 +209,34 @@ static float g_smoothScrollX = 0.0f;
 static int g_hoveredIndex = -1;
 static Rectangle g_previewStartRect;
 
-//==============================================================================
-// CORE & HELPER FUNCTIONS
-//==============================================================================
-
 void LogMessage(int level, const char *format, ...)
 {
-    // Logs are sent to stderr to not interfere with stdout (the final wallpaper path)
     const char* level_str = "";
     const char* color_code = "";
-    const char* color_reset = "\033[0m"; // Resets terminal color
+    const char* color_reset = "\033[0m";
 
     switch (level) {
         case LOG_INFO:
             level_str = "INFO";
-            color_code = "\033[0;34m"; // Blue
+            color_code = "\033[0;34m";
             break;
         case LOG_WARNING:
             level_str = "WARN";
-            color_code = "\033[0;33m"; // Yellow
+            color_code = "\033[0;33m";
             break;
         case LOG_ERROR:
             level_str = "ERROR";
-            color_code = "\033[0;31m"; // Red
+            color_code = "\033[0;31m";
             break;
     }
 
-    // Print the colored level tag
     fprintf(stderr, "%s[%s] ", color_code, level_str);
 
-    // Print the actual formatted message
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);
     va_end(args);
 
-    // Reset the color and add a newline
     fprintf(stderr, "%s\n", color_reset);
 }
 
@@ -409,7 +397,6 @@ static void LoadWallpapers(const char *dir)
         char *fullpath;
         if (asprintf(&fullpath, "%s/%s", dir, entry->d_name) == -1) continue;
 
-
         wallpapers[wallpaper_count] = (Wallpaper){
             .path = strdup(fullpath),
             .filename = strdup(entry->d_name),
@@ -426,7 +413,6 @@ static void LoadWallpapers(const char *dir)
 
 void LoadDefaultConfig()
 {
-    // Default Theme Colors
     AppTheme.bg = (Color){10, 10, 15, 255};
     AppTheme.idle = (Color){30, 30, 46, 255};
     AppTheme.hover = (Color){49, 50, 68, 255};
@@ -435,7 +421,6 @@ void LoadDefaultConfig()
     AppTheme.overlay = (Color){10, 10, 15, 200};
     AppTheme.text = (Color){202, 212, 241, 255};
 
-    // Default Numerical Settings
     g_startupEffect = EFFECT_NONE;
     g_keypressEffect = EFFECT_NONE;
     g_exitEffect = EFFECT_NONE;
@@ -452,7 +437,6 @@ void LoadDefaultConfig()
     g_max_fps = 200;
 }
 
-// Helper to trim leading/trailing whitespace from a string
 char* trim_whitespace(char* str) {
     char *end;
     while(isspace((unsigned char)*str)) str++;
@@ -467,7 +451,7 @@ void ParseConfigFile()
 {
     char config_path[1024];
     snprintf(config_path, sizeof(config_path), "%s/.config/hellpaper", get_home_dir());
-    mkdir(config_path, 0755); // Create config directory if it doesn't exist
+    mkdir(config_path, 0755);
     snprintf(config_path, sizeof(config_path), "%s/.config/hellpaper/hellpaper.conf", get_home_dir());
 
     FILE *file = fopen(config_path, "r");
@@ -478,7 +462,6 @@ void ParseConfigFile()
 
     char line[256];
     while (fgets(line, sizeof(line), file)) {
-        // Skip comments and empty lines
         if (line[0] == '#' || line[0] == ';' || line[0] == '\n') continue;
 
         char* key = strtok(line, "=");
@@ -488,7 +471,6 @@ void ParseConfigFile()
             key = trim_whitespace(key);
             value = trim_whitespace(value);
 
-            // --- Parse Theme Colors ---
             if (strcmp(key, "bg") == 0) sscanf(value, "%hhu, %hhu, %hhu, %hhu", &AppTheme.bg.r, &AppTheme.bg.g, &AppTheme.bg.b, &AppTheme.bg.a);
             else if (strcmp(key, "idle") == 0) sscanf(value, "%hhu, %hhu, %hhu, %hhu", &AppTheme.idle.r, &AppTheme.idle.g, &AppTheme.idle.b, &AppTheme.idle.a);
             else if (strcmp(key, "hover") == 0) sscanf(value, "%hhu, %hhu, %hhu, %hhu", &AppTheme.hover.r, &AppTheme.hover.g, &AppTheme.hover.b, &AppTheme.hover.a);
@@ -497,7 +479,6 @@ void ParseConfigFile()
             else if (strcmp(key, "overlay") == 0) sscanf(value, "%hhu, %hhu, %hhu, %hhu", &AppTheme.overlay.r, &AppTheme.overlay.g, &AppTheme.overlay.b, &AppTheme.overlay.a);
             else if (strcmp(key, "text") == 0) sscanf(value, "%hhu, %hhu, %hhu, %hhu", &AppTheme.text.r, &AppTheme.text.g, &AppTheme.text.b, &AppTheme.text.a);
             
-            // --- Parse Numerical Settings ---
             else if (strcmp(key, "max_wallpapers") == 0) g_max_wallpapers = atoi(value);
             else if (strcmp(key, "base_thumb_size") == 0) g_base_thumb_size = atoi(value);
             else if (strcmp(key, "base_padding") == 0) g_base_padding = atoi(value);
@@ -508,7 +489,6 @@ void ParseConfigFile()
             else if (strcmp(key, "ken_burns_duration") == 0) g_ken_burns_duration = atof(value);
             else if (strcmp(key, "max_fps") == 0) g_max_fps = atoi(value);
 
-            // effects:
             else if (strcmp(key, "startup_effect") == 0) g_startupEffect = ParseEffect(value);
             else if (strcmp(key, "keypress_effect") == 0) g_keypressEffect = ParseEffect(value);
             else if (strcmp(key, "exit_effect") == 0) g_exitEffect = ParseEffect(value);
@@ -554,9 +534,6 @@ void print_help()
     printf("  ~/.config/hellpaper/hellpaper.conf\n");
 }
 
-//==============================================================================
-// UPDATE & DRAW LOGIC PER MODE
-//==============================================================================
 void UpdateAndDrawScene(int filteredCount, int* filteredIndices, float delta, bool isPreviewing, bool isSearching)
 {
     int sw = GetScreenWidth();
@@ -572,7 +549,6 @@ void UpdateAndDrawScene(int filteredCount, int* filteredIndices, float delta, bo
         }
     }
 
-    // --- Position Calculation Pass ---
     for (int j = 0; j < filteredCount; j++)
     {
         int i = filteredIndices[j];
@@ -621,14 +597,9 @@ void UpdateAndDrawScene(int filteredCount, int* filteredIndices, float delta, bo
         wallpapers[i].animSize = Vector2Lerp(wallpapers[i].animSize, targetSize2D, delta * g_anim_speed);
     }
 
-    // --- Hover Detection Pass (Mouse & Keyboard) ---
-    // Check if the mouse has moved. If it has, give it priority.
     if (Vector2LengthSqr(GetMouseDelta()) > 0.1f) 
     {
-        // When the mouse moves, it takes control. Reset hover index first.
         g_hoveredIndex = -1; 
-
-        // Now, let the mouse find a new item to hover over.
         for (int j = filteredCount - 1; j >= 0; j--)
         {
             int i = filteredIndices[j];
@@ -636,12 +607,11 @@ void UpdateAndDrawScene(int filteredCount, int* filteredIndices, float delta, bo
             if (CheckCollisionPointRec(mouse, rect) && !isPreviewing && !isSearching)
             {
                 g_hoveredIndex = i;
-                break; // First one under mouse wins
+                break;
             }
         }
     }
 
-    // --- Hover Animation Update Pass (for both mouse and keyboard) ---
     int highlighted_j = -1;
     for (int j = 0; j < filteredCount; j++)
     {
@@ -653,11 +623,9 @@ void UpdateAndDrawScene(int filteredCount, int* filteredIndices, float delta, bo
         }
     }
 
-    // --- Drawing Pass ---
-    // First, draw all non-highlighted items
     for (int j = 0; j < filteredCount; j++)
     {
-        if (j == highlighted_j) continue; // Skip highlighted item for now
+        if (j == highlighted_j) continue;
         int i = filteredIndices[j];
         Rectangle rect = {wallpapers[i].animPos.x, wallpapers[i].animPos.y, wallpapers[i].animSize.x, wallpapers[i].animSize.y};
         DrawRectangleRounded(rect, 0.1f, 8, ColorLerp(AppTheme.idle, AppTheme.hover, wallpapers[i].hoverAnim));
@@ -671,7 +639,6 @@ void UpdateAndDrawScene(int filteredCount, int* filteredIndices, float delta, bo
         }
     }
 
-    // Then, draw the highlighted item on top
     if (highlighted_j != -1)
     {
         int i = filteredIndices[highlighted_j];
@@ -686,14 +653,12 @@ void UpdateAndDrawScene(int filteredCount, int* filteredIndices, float delta, bo
         {
             DrawCircleSectorLines(Vector2Add((Vector2){rect.x, rect.y}, (Vector2){rect.width / 2, rect.height / 2}), rect.width / 3, fmodf(GetTime() * 360, 360), fmodf(GetTime() * 360, 360) + 90, 30, Fade(AppTheme.border, 0.6f));
         }
-        // Draw text under the highlighted item
         const char *text = wallpapers[i].filename;
         float fontSize = 14.f * Clamp(masterScale, 0.8f, 1.5f);
         int textWidth = MeasureText(text, fontSize);
         DrawText(text, rect.x + (rect.width - textWidth) / 2, rect.y + rect.height + 5, fontSize, AppTheme.text);
     }
 
-    // --- Preview Drawing ---
     if (previewAnim > 0.001f)
     {
         DrawRectangle(0, 0, sw, sh, Fade(AppTheme.overlay, previewAnim * 0.9f));
@@ -717,7 +682,7 @@ void UpdateAndDrawScene(int filteredCount, int* filteredIndices, float delta, bo
         Rectangle endRect = {(sw - tW) / 2, (sh - tH) / 2, tW, tH};
         Rectangle startRect = g_previewStartRect;
 
-        if (preview_index == -1) // We are closing
+        if (preview_index == -1)
         {
             startRect = (Rectangle){wallpapers[closing_preview_index].animPos.x, wallpapers[closing_preview_index].animPos.y, wallpapers[closing_preview_index].animSize.x, wallpapers[closing_preview_index].animSize.y};
         }
@@ -733,12 +698,8 @@ void UpdateAndDrawScene(int filteredCount, int* filteredIndices, float delta, bo
     }
 }
 
-//==============================================================================
-// MAIN
-//==============================================================================
 int main(int argc, char **argv)
 {
-    // --- Argument Parsing ---
     for (int i = 1; i < argc; i++)
     {
         if (strcmp(argv[i], "--help") == 0)
@@ -748,7 +709,6 @@ int main(int argc, char **argv)
         }
     }
 
-    // Initialization
     char *wallpaper_path = NULL;
     char default_path[1024];
     LoadDefaultConfig();
@@ -786,7 +746,6 @@ int main(int argc, char **argv)
     }
     LoadWallpapers(wallpaper_path);
 
-    // --- Window and Graphics Setup ---
     const int screenWidth = 1280;
     const int screenHeight = 720;
     InitWindow(screenWidth, screenHeight, "Hellpaper");
@@ -812,15 +771,15 @@ int main(int argc, char **argv)
     RenderTexture2D bloomMaskHiRes = LoadRenderTexture(screenWidth, screenHeight);
 
     pthread_t loader_threads[g_max_threads];
-    for (int t = 0; t < 8; t++)
+    for (int t = 0; t < g_max_threads; t++)
     {
         pthread_create(&loader_threads[t], NULL, LoaderThread, NULL);
     }
     TriggerEffect(g_startupEffect, 1.0f);
+    
+    float keyRepeatTimer = 0.0f;
+    const float KEY_REPEAT_DELAY = 0.1f;
 
-    //==============================================================================
-    // Main Loop (REVISED AND CORRECTED)
-    //==============================================================================
     while (!WindowShouldClose())
     {
         float delta = GetFrameTime();
@@ -832,7 +791,6 @@ int main(int argc, char **argv)
             break;
         }
 
-        // --- Handle window resizing ---
         if (IsWindowResized())
         {
             UnloadRenderTexture(mainTarget);
@@ -845,7 +803,6 @@ int main(int argc, char **argv)
             bloomMaskHiRes = LoadRenderTexture(sw, sh);
         }
 
-        // --- Update effects timer ---
         if (g_effectTimer > 0)
         {
             g_effectTimer -= delta;
@@ -867,7 +824,6 @@ int main(int argc, char **argv)
 
         bool isPreviewing = (preview_index != -1);
 
-        // --- Filter wallpapers based on search ---
         int filteredIndices[g_max_wallpapers];
         int filteredCount = 0;
         for (int i = 0; i < wallpaper_count; i++)
@@ -878,7 +834,6 @@ int main(int argc, char **argv)
             }
         }
 
-        // --- Calculate maximum scroll limits (MUST be done before input handling) ---
         float maxScrollY = 0, maxScrollX = 0;
         switch(g_currentMode)
         {
@@ -896,10 +851,6 @@ int main(int argc, char **argv)
                     break;
                 }
             case MODE_RIVER_H:
-                {
-                    maxScrollX = filteredCount * (g_base_thumb_size * 0.8f * masterScale) - sw + (g_base_thumb_size * 1.5f * masterScale);
-                    break;
-                }
             case MODE_WAVE:
                 {
                     maxScrollX = filteredCount * (g_base_thumb_size * 0.8f * masterScale) - sw + (g_base_thumb_size * 1.5f * masterScale);
@@ -910,8 +861,8 @@ int main(int argc, char **argv)
         if (maxScrollX < 0) maxScrollX = 0;
 
 
-        // --- Handle Mode Switching and Search Input ---
-        if (!isExiting && !isPreviewing)
+        bool blockActions = isExiting || isPreviewing;
+        if (!blockActions)
         {
             int key = GetKeyPressed();
             if (key != 0 && !isSearching)
@@ -925,8 +876,7 @@ int main(int argc, char **argv)
             }
         }
 
-        bool isSearching_fallback = false;
-        bool escFallback = false;
+        bool ateEscKey = false;
         if (isSearching)
         {
             int key = GetCharPressed();
@@ -939,123 +889,81 @@ int main(int argc, char **argv)
                 key = GetCharPressed();
             }
             if (IsKeyPressed(KEY_BACKSPACE)) { if (searchBufferCount > 0) searchBuffer[--searchBufferCount] = '\0'; }
-            if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_ESCAPE)) { isSearching = false; isSearching_fallback = true; escFallback = true; }
+            if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_ESCAPE)) { isSearching = false; if(IsKeyPressed(KEY_ESCAPE)) ateEscKey = true;}
         }
         else
         {
-            if (!isPreviewing && IsKeyPressed(KEY_SLASH)) { isSearching = true; }
+            if (!blockActions && IsKeyPressed(KEY_SLASH)) { isSearching = true; searchBufferCount = 0; searchBuffer[0] = '\0'; }
         }
 
 
-        // --- Keyboard Navigation (with PROACTIVE Auto-Scroll) ---
-        if (!isPreviewing && !isSearching && filteredCount > 0)
+        if (!blockActions && !isSearching && filteredCount > 0)
         {
             int direction = 0;
-            bool isVerticalMoveInGrid = false;
+            keyRepeatTimer -= delta;
 
-            if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_L)) direction = 1;
-            if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_H)) direction = -1;
-            if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_J))
-            {
-                isVerticalMoveInGrid = (g_currentMode == MODE_GRID);
-                if (isVerticalMoveInGrid)
-                {
-                    int cols = (GetScreenWidth() / (g_base_thumb_size * masterScale + g_base_padding * masterScale));
-                    if (cols < 1) cols = 1;
-                    direction = cols;
-                } else direction = 1;
-            }
-            if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_K))
-            {
-                isVerticalMoveInGrid = (g_currentMode == MODE_GRID);
-                if (isVerticalMoveInGrid)
-                {
-                    int cols = (GetScreenWidth() / (g_base_thumb_size * masterScale + g_base_padding * masterScale));
-                    if (cols < 1) cols = 1;
-                    direction = -cols;
-                } else direction = -1;
-            }
+            bool navKeyPressed = IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_L) || IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_H) ||
+                                 IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_J) || IsKeyDown(KEY_UP) || IsKeyDown(KEY_K);
 
-            if (direction != 0)
-            {
-                int currentFilteredIdx = -1;
-                for (int i = 0; i < filteredCount; i++)
+            if (navKeyPressed && keyRepeatTimer <= 0.0f) {
+                keyRepeatTimer = KEY_REPEAT_DELAY;
+
+                if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_L)) direction = 1;
+                if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_H)) direction = -1;
+                if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_J))
                 {
-                    if (filteredIndices[i] == g_hoveredIndex)
+                    if (g_currentMode == MODE_GRID) {
+                        int cols = (GetScreenWidth() / (g_base_thumb_size * masterScale + g_base_padding * masterScale));
+                        if (cols < 1) cols = 1;
+                        direction = cols;
+                    } else direction = 1;
+                }
+                if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_K))
+                {
+                    if (g_currentMode == MODE_GRID) {
+                        int cols = (GetScreenWidth() / (g_base_thumb_size * masterScale + g_base_padding * masterScale));
+                        if (cols < 1) cols = 1;
+                        direction = -cols;
+                    } else direction = -1;
+                }
+
+                if (direction != 0)
+                {
+                    int currentFilteredIdx = -1;
+                    for (int i = 0; i < filteredCount; i++)
                     {
-                        currentFilteredIdx = i;
-                        break;
+                        if (filteredIndices[i] == g_hoveredIndex)
+                        {
+                            currentFilteredIdx = i;
+                            break;
+                        }
                     }
-                }
 
-                int nextFilteredIdx = (currentFilteredIdx == -1) ? ((direction > 0) ? 0 : filteredCount - 1) : (currentFilteredIdx + direction);
-
-                if (isVerticalMoveInGrid)
-                {
-                    if (nextFilteredIdx >= 0 && nextFilteredIdx < filteredCount) g_hoveredIndex = filteredIndices[nextFilteredIdx];
-                }
-                else
-                {
-                    nextFilteredIdx = (nextFilteredIdx % filteredCount + filteredCount) % filteredCount;
+                    int nextFilteredIdx = (currentFilteredIdx == -1) ? ((direction > 0) ? 0 : filteredCount - 1) : (currentFilteredIdx + direction);
+                    nextFilteredIdx = Clamp(nextFilteredIdx, 0, filteredCount - 1);
                     g_hoveredIndex = filteredIndices[nextFilteredIdx];
-                }
 
-                // --- AUTO-SCROLL LOGIC ---
-                if (g_hoveredIndex != -1)
-                {
-                    // Calculate the TARGET position of the selected item
-                    Vector2 targetPos = {0}, targetSize = {0};
-                    float ts = g_base_thumb_size * masterScale;
-                    float p = g_base_padding * masterScale;
-
-                    switch (g_currentMode)
-                    {
-                        case MODE_GRID: {
-                                            int cols = sw / (ts + p); if (cols < 1) cols = 1;
-                                            targetPos = (Vector2){(nextFilteredIdx % cols) * (ts + p) + p, (nextFilteredIdx / cols) * (ts + p) + p};
-                                            targetSize = (Vector2){ts, ts};
-                                            break;
-                                        }
-                        case MODE_RIVER_V: {
-                                               float itemY = nextFilteredIdx * (ts * 0.7f);
-                                               float dist = fabs(itemY - (g_scroll.y + sh/2.f - ts/2.f));
-                                               float s = Remap(dist, 0, sh / 2.f, 1.5f, 0.5f); s = Clamp(s, 0.5, 1.5) * masterScale;
-                                               targetPos = (Vector2){sw / 2.f - (ts * s) / 2.f, itemY};
-                                               targetSize = (Vector2){ts * s, ts * s};
-                                               break;
-                                           }
-                        case MODE_RIVER_H:
-                        case MODE_WAVE: {
-                                            float itemX = nextFilteredIdx * (ts * 0.8f);
-                                            targetPos = (Vector2){itemX, 0}; // Y is dynamic, but X is what matters for scroll
-                                            targetSize = (Vector2){ts, ts};
-                                            break;
-                                        }
-                    }
-
-                    // Now check if this target position is out of view and adjust g_scroll
+                    Rectangle itemRect = {wallpapers[g_hoveredIndex].animPos.x, wallpapers[g_hoveredIndex].animPos.y, wallpapers[g_hoveredIndex].animSize.x, wallpapers[g_hoveredIndex].animSize.y};
                     if (g_currentMode == MODE_GRID || g_currentMode == MODE_RIVER_V)
                     {
-                        if (targetPos.y < g_scroll.y) g_scroll.y = targetPos.y;
-                        if (targetPos.y + targetSize.y > g_scroll.y + sh) g_scroll.y = targetPos.y + targetSize.y - sh;
+                        if (itemRect.y < g_smoothScrollY) g_scroll.y = itemRect.y - g_base_padding;
+                        if (itemRect.y + itemRect.height > g_smoothScrollY + sh) g_scroll.y = itemRect.y + itemRect.height - sh + g_base_padding;
                     }
                     else
                     {
-                        if (targetPos.x < g_scroll.x) g_scroll.x = targetPos.x;
-                        if (targetPos.x + targetSize.x > g_scroll.x + sw) g_scroll.x = targetPos.x + targetSize.x - sw;
+                        if (itemRect.x < g_smoothScrollX) g_scroll.x = itemRect.x - g_base_padding;
+                        if (itemRect.x + itemRect.width > g_smoothScrollX + sw) g_scroll.x = itemRect.x + itemRect.width - sw + g_base_padding;
                     }
                 }
             }
         }
 
 
-        // --- Mouse Wheel for Scaling (Ctrl) or Scrolling ---
         float wheel = GetMouseWheelMove();
         if (IsKeyDown(KEY_LEFT_CONTROL))
         {
             masterScale += wheel * 0.05f;
-            if (masterScale < 0.2f) masterScale = 0.2f;
-            if (masterScale > 5.f) masterScale = 5.f;
+            masterScale = Clamp(masterScale, 0.2f, 5.0f);
         }
         else if (!isPreviewing)
         {
@@ -1063,14 +971,12 @@ int main(int argc, char **argv)
             else g_scroll.y -= wheel * 100.f;
         }
 
-        // CLAMP ALL SCROLLING to the max limits
         g_scroll.y = Clamp(g_scroll.y, 0, maxScrollY);
         g_scroll.x = Clamp(g_scroll.x, 0, maxScrollX);
 
-        // --- Handle Mouse Clicks & Preview ---
-        if (!isPreviewing && g_hoveredIndex != -1)
+        if (!isPreviewing && !isExiting && !isSearching && g_hoveredIndex != -1)
         {
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || (IsKeyPressed(KEY_ENTER) && !isSearching && !isSearching_fallback ))
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsKeyPressed(KEY_ENTER))
             {
                 isExiting = true;
                 TriggerParticleBurst(GetMousePosition());
@@ -1092,30 +998,34 @@ int main(int argc, char **argv)
 
         if (isPreviewing && (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsKeyPressed(KEY_ESCAPE) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)))
         {
-            if (IsKeyPressed(KEY_ESCAPE)) escFallback = true;
-
+            if(IsKeyPressed(KEY_ESCAPE)) ateEscKey = true;
             if (atomic_load(&isFullTextureReady)) UnloadTexture(fullPreviewTexture);
             closing_preview_index = preview_index;
             g_previewStartRect = (Rectangle){wallpapers[closing_preview_index].animPos.x, wallpapers[closing_preview_index].animPos.y, wallpapers[closing_preview_index].animSize.x, wallpapers[closing_preview_index].animSize.y};
             preview_index = -1;
         }
-
-        if (IsKeyPressed(KEY_ESCAPE) && !escFallback) isExiting = true;
-            
-
-        // --- Update Animations and Async Texture Loads ---
+        
+        if (IsKeyPressed(KEY_ESCAPE) && !ateEscKey) {
+            break;
+        }
+        
         g_smoothScrollY = Lerp(g_smoothScrollY, g_scroll.y, delta * g_anim_speed);
         g_smoothScrollX = Lerp(g_smoothScrollX, g_scroll.x, delta * g_anim_speed);
+
+        int textures_loaded_this_frame = 0;
         for (int i = 0; i < wallpaper_count; i++)
         {
+            if (textures_loaded_this_frame >= MAX_TEXTURES_TO_LOAD_PER_FRAME) break;
             if (atomic_load(&imagePending[i]))
             {
                 wallpapers[i].texture = LoadTextureFromImage(pendingImages[i]);
                 UnloadImage(pendingImages[i]);
                 atomic_store(&wallpapers[i].loaded, true);
                 atomic_store(&imagePending[i], false);
+                textures_loaded_this_frame++;
             }
         }
+
         if (atomic_load(&fullImagePending))
         {
             fullPreviewTexture = LoadTextureFromImage(pendingFullImage);
@@ -1127,11 +1037,6 @@ int main(int argc, char **argv)
         if (isPreviewing) { if (kenBurnsTimer < g_ken_burns_duration) kenBurnsTimer += delta; }
 
 
-        //==============================================================================
-        // --- DRAWING ---
-        //==============================================================================
-
-        // --- Main Scene Rendering ---
         BeginTextureMode(mainTarget);
         {
             ClearBackground(AppTheme.bg);
@@ -1149,7 +1054,6 @@ int main(int argc, char **argv)
         EndTextureMode();
 
 
-        // --- Bloom and Blur Effects ---
         BeginTextureMode(bloomMaskHiRes);
         {
             ClearBackground(BLANK);
@@ -1180,7 +1084,6 @@ int main(int argc, char **argv)
         EndTextureMode();
         EndShaderMode();
 
-        // --- Final Draw to Screen with Post-Processing ---
         BeginDrawing();
         {
             ClearBackground(AppTheme.bg);
@@ -1210,14 +1113,12 @@ int main(int argc, char **argv)
             EndShaderMode();
 
             DrawText("Modes: 1-4 | Nav: HJKL/Arrows | Zoom: Ctrl+Scroll | Search: / | Preview: L-Shift/RMB | Select: Enter/LMB", 10, sh - 20, 10, AppTheme.text);
-            //DrawFPS(10, 10);
         }
         EndDrawing();
     }
 
-    // --- Cleanup ---
     atomic_store(&loader_running, false);
-    for (int t = 0; t < 8; t++)
+    for (int t = 0; t < g_max_threads; t++)
     {
         pthread_join(loader_threads[t], NULL);
     }
